@@ -1,3 +1,4 @@
+
 # This .gitignore file should be placed at the root of your Unity project directory
 #
 # Get latest from https://github.com/github/gitignore/blob/main/Unity.gitignore
@@ -45,6 +46,19 @@ ExportedObj/
 *.sln
 *.suo
 *.tmp
+=======
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Mm]emoryCaptures/
+UserSettings/
+*.csproj
+*.unityproj
+*.sln
+>>>>>>> f9f2a95 (Initial commit - Unity jam project)
 *.user
 *.userprefs
 *.pidb
@@ -54,6 +68,7 @@ ExportedObj/
 *.mdb
 *.opendb
 *.VC.db
+<<<<<<< HEAD
 
 # Unity3D generated meta files
 *.pidb.meta
@@ -97,3 +112,9 @@ InitTestScene*.unity*
 
 # Auto-generated scenes by play mode tests
 /[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
+=======
+sysinfo.txt
+*.apk
+*.aab
+*.unitypackage
+>>>>>>> f9f2a95 (Initial commit - Unity jam project)
