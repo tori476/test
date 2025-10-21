@@ -1,20 +1,15 @@
 using UnityEditor;
-using UnityEngine;
 
-public static class BuildApp
+public static class BuildApp 
 {
-    // GitHub Actionsから実行されるメソッド
+    [MenuItem("Build/BuildApp")]
     public static void Build()
     {
-        // 🚨 macOS向けにビルドターゲットを修正
-        string[] scenes = { "Assets/Scenes/SampleScene.unity" };
-        string outputPath = "Builds/App/SampleApp.app"; // macOSのアプリパス
-
-        // macOS Standaloneでビルドする例
+        //windows64のプラットフォームでアプリをビルドする
         BuildPipeline.BuildPlayer(
-            scenes,
-            outputPath,
-            BuildTarget.StandaloneOSX, // ビルドターゲットをmacOSに変更
+            new string[] { "Assets/Scenes/SampleScene.unity" },
+            "Builds/App/SampleApp.exe",
+            BuildTarget.StandaloneWindows64,
             BuildOptions.None
         );
     }
