@@ -1,39 +1,66 @@
-name: Build App macOS
+name: Unity Build and Notify
 
+# どのイベントでワークフローを起動するかを設定
 on:
-  workflow_dispatch: { }
-defaults:
-  run:
-    shell: bash
+  push:
+    branches:
+      - main  # mainブランチへのプッシュで実行
 
 jobs:
-  buildForMacOSBasedPlatforms:
-    name: Build for ${{ matrix.targetPlatform }}
-    runs-on: [ self-hosted, macOS ]
-    strategy:
-      fail-fast: false
-      matrix:
-        targetPlatform:
-          - StandaloneOSX # Build a macOS standalone.
-        buildMethod:
-          - BuildApp.Build
-        unityPath:
-          - "/Applications/Unity/Hub/Editor/6000.2.2f1/Unity.app/Contents/MacOS/Unity" #使用しているUnityのバージョンのパス
+  build_webgl:
+    runs-on: ubuntu-latest
+    
     steps:
-      - uses: actions/checkout@v4
+      # 1. リポジトリのチェックアウト
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
-          lfs: true
-          clean: false
-          submodules: recursive
-
-      - name: Run Build
-        run: |
-          ${{ matrix.unityPath }} -batchmode -quit -projectPath . -buildTarget ${{matrix.targetPlatform}} -executeMethod ${{ matrix.buildMethod }} -logFile -
-
-      - name: Upload App
-        uses: actions/upload-artifact@v3
+          lfs: true # Git LFS を利用している場合
+          
+      # 2. Unityライセンスのアクティベート
+      - name: Activate Unity License
+        uses: game-ci/unity-activate@v4
+        env:
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+          UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }} # シリアルナンバーを使う場合
+          
+      # 3. Unity ビルドの実行 (WebGLの例)
+      - name: Build project (WebGL)
+        uses: game-ci/unity-builder@v4
         with:
-          name: App_Develop
-          path: Builds/App/
-          retention-days: 7
+          targetPlatform: WebGL
+          # ビルド成果物が出力されるディレクトリ名
+          buildsPath: build/WebGL
+          
+      # 4. ビルド成果物をアップロード
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: WebGL-Build-${{ github.sha }}
+          path: build/WebGL
+          
+      # 5. Discordへの通知
+      - name: Send Discord notification (Success)
+        if: success()
+        uses: rjstone/discord-webhook-notify@v1
+        with:
+          severity: info
+          text: |
+            ✅ **Unity ビルド成功!**
+            **ブランチ:** `${{ github.ref_name }}`
+            **コミット:** `${{ github.event.head_commit.message }}`
+            ビルド成果物はGitHub ActionsのArtifactsからダウンロード可能です。
+          webhookUrl: ${{ secrets.DISCORD_WEBHOOK }}
 
+      - name: Send Discord notification (Failure)
+        if: failure()
+        uses: rjstone/discord-webhook-notify@v1
+        with:
+          severity: error
+          text: |
+            ❌ **Unity ビルド失敗!**
+            **ブランチ:** `${{ github.ref_name }}`
+            **コミット:** `${{ github.event.head_commit.message }}`
+            詳細はActionsタブを確認してください。
+          webhookUrl: ${{ secrets.DISCORD_WEBHOOK }}
