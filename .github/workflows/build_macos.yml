@@ -8,7 +8,7 @@ on:
 
 # 環境変数（Unityエディタバージョンを設定）
 env:
-  UNITY_VERSION: 6000.2.2f1 # ★ あなたの指定したバージョンに修正 ★
+  UNITY_VERSION: 6000.2.2f1 # ★ あなたの指定したバージョン ★
 
 jobs:
   build_webgl:
@@ -23,8 +23,8 @@ jobs:
           
       # 2. Unityライセンスのアクティベート
       - name: Activate Unity License
-        # アクションの最新の正しい短縮形式を使用します
-        uses: unity-ci/activate@v5  
+        # ★ 最新の正しいパスと安定版v3に修正 ★
+        uses: game-ci/unity-actions/activate@v3  
         env:
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
@@ -32,8 +32,8 @@ jobs:
           
       # 3. Unity ビルドの実行 (WebGLの例)
       - name: Build project (WebGL)
-        # アクションの最新の正しい短縮形式を使用します
-        uses: unity-ci/builder@v5    
+        # ★ 最新の正しいパスと安定版v3に修正 ★
+        uses: game-ci/unity-actions/builder@v3    
         with:
           unityVersion: ${{ env.UNITY_VERSION }}
           targetPlatform: WebGL
@@ -49,8 +49,8 @@ jobs:
           
       # 5. Unityライセンスのディアクティベート（重要）
       - name: Deactivate Unity License
-        # アクションの最新の正しい短縮形式を使用します
-        uses: unity-ci/deactivate@v5 
+        # ★ 最新の正しいパスと安定版v3に修正 ★
+        uses: game-ci/unity-actions/deactivate@v3 
         if: always() # ビルドが失敗しても実行されるようにする
           
       # 6. Discordへの通知 (成功時)
