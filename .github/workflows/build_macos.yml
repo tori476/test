@@ -23,8 +23,8 @@ jobs:
           
       # 2. Unityライセンスのアクティベート
       - name: Activate Unity License
-        # ★ パスを整理し、バージョンを @v4 に修正 ★
-        uses: game-ci/unity-actions/activate@v4  
+        # ★ バージョンタグを v3 に修正 ★
+        uses: game-ci/unity-actions/activate@v3  
         env:
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
@@ -32,8 +32,8 @@ jobs:
           
       # 3. Unity ビルドの実行 (WebGLの例)
       - name: Build project (WebGL)
-        # ★ パスを整理し、バージョンを @v4 に修正 ★
-        uses: game-ci/unity-actions/builder@v4    
+        # ★ バージョンタグを v3 に修正 ★
+        uses: game-ci/unity-actions/builder@v3    
         with:
           unityVersion: ${{ env.UNITY_VERSION }}
           targetPlatform: WebGL
@@ -49,8 +49,8 @@ jobs:
           
       # 5. Unityライセンスのディアクティベート（重要）
       - name: Deactivate Unity License
-        # ★ パスを整理し、バージョンを @v4 に修正 ★
-        uses: game-ci/unity-actions/deactivate@v4 
+        # ★ バージョンタグを v3 に修正 ★
+        uses: game-ci/unity-actions/deactivate@v3 
         if: always() # ビルドが失敗しても実行されるようにする
           
       # 6. Discordへの通知 (成功時)
@@ -76,7 +76,4 @@ jobs:
           text: |
             ❌ **Unity ビルド失敗!**
             **ブランチ:** `${{ github.ref_name }}`
-            **コミット:** `${{ github.event.head_commit.message }}`
-            詳細はGitHub Actionsのタブを確認してください。
-          webhookUrl: ${{ secrets.DISCORD_WEBHOOK }}
-
+            **コミット:** `${{ github.event.head_commit.message
