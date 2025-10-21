@@ -1,74 +1,98 @@
-name: Build macOS and Notify Discord
+name: Build
 
 on:
-  push:
-    branches: [ main ] 
-  workflow_dispatch: {} 
+  # masterへのPRマージをトリガーとしてワークフローを開始する
+  pull_request:
+    branches:
+      - develop
+      - main
+    types: [closed]
 
-defaults:
-  run:
-    shell: bash
+  # 手動実行デバッグ用
+  workflow_dispatch: {}
 
 jobs:
-  buildForMacOS:
-    name: Build Unity Project on macOS
-    runs-on: macos-latest
-
+  build:
+    name: Build my project
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repository
+      # Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          lfs: true 
-          submodules: recursive
 
-      - name: Set up Unity Editor
-        # 💡 アクションを修正
-        uses: unity-actions/setup-unity@v2
-        with:
-          # 🚨 プロジェクトのUnityバージョンに合わせる！例: 2022.3.5f1
-          unity-version: 6000.2.2f1 # ← ここをあなたの正しいバージョンに修正
-
-      - name: Run Unity Build
+        
+      - name: Set CompressionFormat to Disabled
         run: |
-          # 🚨 BuildApp.Buildは、作成したビルドスクリプトのクラス名.メソッド名に合わせる
-          Unity -batchmode -quit -projectPath . -buildTarget StandaloneOSX -executeMethod BuildApp.Build -logFile - || exit 1
+          sed -i -e 's/webGLCompressionFormat: ./webGLCompressionFormat: 2/' ProjectSettings/ProjectSettings.asset
 
-      - name: Upload Build Artifact
-        # ✅ v4に修正
-        uses: actions/upload-artifact@v4
+      # Cache
+      - name: Cache Library
+        uses: actions/cache@v3
         with:
-          name: App_macOS 
-          path: Builds/App/ # ビルドメソッドで指定した出力フォルダに合わせる
-          retention-days: 7
+          path: Library
+          key: Library-${{ hashFiles('Assets/**', 'Packages/**','ProjectSettings/**') }}
+          restore-keys: Library-
 
-      - name: Send Success Notification to Discord
-        if: success() 
+      # Build
+      - name: Build project
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL:   ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          targetPlatform: WebGL
+          allowDirtyBuild: true
+          unityVersion: 6000.2.2f1 # ここは各自プロジェクトに合わせて設定
+
+      # Remove
+      - name: Remove symlinks and macOS hidden files
         run: |
-          curl -X POST ${{ secrets.DISCORD_WEBHOOK_URL }} \
-          -H "Content-Type: application/json" \
-          -d '{
-            "embeds": [
-              {
-                "title": "✅ Unity Build Succeeded (macOS)",
-                "description": "リポジトリ ${{ github.repository }} でビルドが成功しました。",
-                "color": 3066993,
-                "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-              }
-            ]
-          }'
+          find build -type l -delete || true
+          find build -name ".DS_Store" -delete || true
+
+      # Check build size
+      - name: Check build size
+        run: du -sh build
           
-      - name: Send Failure Notification to Discord
+      # Upload
+      - name: Upload
+        uses: actions/upload-pages-artifact@v3
+        with:
+          name: github-pages
+          path: build/WebGL/WebGL
+
+      # Show directory
+      - name: Show build folder structure
+        run: |
+          echo "Contents of build directory:"
+          ls -R build
+          
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+      
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Notify Discord - Success
+        if: success()
+        run: |
+          curl -X POST -H "Content-Type: application/json" \
+          -d "{\"content\": \"✅ できた！！これが最新のビルドデータだよ！！ \n▶️ Play: ${{ steps.deployment.outputs.page_url }}\n📄 View logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}" \
+          ${{ secrets.DISCORD_WEBHOOK_URL }}
+
+      - name: Notify Discord - Failure
         if: failure()
         run: |
-          curl -X POST ${{ secrets.DISCORD_WEBHOOK_URL }} \
-          -H "Content-Type: application/json" \
-          -d '{
-            "embeds": [
-              {
-                "title": "❌ Unity Build Failed (macOS)",
-                "description": "リポジトリ ${{ github.repository }} でビルドが失敗しました。ログを確認してください。",
-                "color": 15158332,
-                "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-              }
-            ]
-          }'
+          curl -X POST -H "Content-Type: application/json" \
+          -d "{\"content\": \"❌ ビルドエラーだ！修正してやる！！! \n📄 View logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}" \
+          ${{ secrets.DISCORD_WEBHOOK_URL }}
