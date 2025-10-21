@@ -1,4 +1,4 @@
-name: Build App windows
+name: Build App macOS
 
 on:
   workflow_dispatch: { }
@@ -7,18 +7,18 @@ defaults:
     shell: bash
 
 jobs:
-  buildForWindowsBasedPlatforms:
+  buildForMacOSBasedPlatforms:
     name: Build for ${{ matrix.targetPlatform }}
-    runs-on: [ self-hosted, Windows ]
+    runs-on: [ self-hosted, macOS ]
     strategy:
       fail-fast: false
       matrix:
         targetPlatform:
-          - StandaloneWindows64 # Build a Windows 64-bit standalone.
+          - StandaloneOSX # Build a macOS standalone.
         buildMethod:
           - BuildApp.Build
         unityPath:
-          - '"C:\Program Files\Unity\Hub\Editor\6000.2.2f1\Editor\Unity.exe"' #使用しているUnityのバージョンのパス
+          - "/Applications/Unity/Hub/Editor/6000.2.2f1/Unity.app/Contents/MacOS/Unity" #使用しているUnityのバージョンのパス
     steps:
       - uses: actions/checkout@v4
         with:
