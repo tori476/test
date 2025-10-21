@@ -1,0 +1,80 @@
+name: Build macOS and Notify Discord
+
+on:
+  push:
+    branches: [ main ] # mainブランチへのプッシュで実行
+  workflow_dispatch: {} # 手動実行を可能にする
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  buildForMacOS:
+    name: Build Unity Project on macOS
+    runs-on: macos-latest # GitHubホステッドランナー（macOS）を使用
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          lfs: true 
+          submodules: recursive
+
+      # 🚨 ここを**あなたのUnityプロジェクトのバージョン**に合わせる！
+      - name: Set up Unity Editor
+        uses: game-ci/unity-setup@v4
+        with:
+          unity-version: 2021.3.16f1 # ← **ここを修正**
+
+      # ビルド実行
+      - name: Run Unity Build
+        run: |
+          # 🚨 BuildApp.Buildは、あなたがAssets/Editorに作成した
+          #    ビルドスクリプトのクラス名.メソッド名に合わせる
+          Unity -batchmode -quit -projectPath . -buildTarget StandaloneOSX -executeMethod BuildApp.Build -logFile - || exit 1
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: App_macOS 
+          path: Builds/App/ # ビルドメソッドで指定した出力フォルダに合わせる
+          retention-days: 7
+
+      # ----------------------------------------
+      # Discord通知 (成功時)
+      # ----------------------------------------
+      - name: Send Success Notification to Discord
+        if: success() 
+        run: |
+          curl -X POST ${{ secrets.DISCORD_WEBHOOK_URL }} \
+          -H "Content-Type: application/json" \
+          -d '{
+            "embeds": [
+              {
+                "title": "✅ Unity Build Succeeded (macOS)",
+                "description": "リポジトリ ${{ github.repository }} でビルドが成功しました。",
+                "color": 3066993,
+                "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+              }
+            ]
+          }'
+          
+      # ----------------------------------------
+      # Discord通知 (失敗時)
+      # ----------------------------------------
+      - name: Send Failure Notification to Discord
+        if: failure()
+        run: |
+          curl -X POST ${{ secrets.DISCORD_WEBHOOK_URL }} \
+          -H "Content-Type: application/json" \
+          -d '{
+            "embeds": [
+              {
+                "title": "❌ Unity Build Failed (macOS)",
+                "description": "リポジトリ ${{ github.repository }} でビルドが失敗しました。ログを確認してください。",
+                "color": 15158332,
+                "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+              }
+            ]
+          }'
