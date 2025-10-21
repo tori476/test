@@ -1,7 +1,7 @@
 name: Build
 
 on:
-  # masterへのPRマージをトリガーとしてワークフローを開始する
+  # develop/mainへのPRマージをトリガーとしてワークフローを開始する
   pull_request:
     branches:
       - develop
@@ -20,9 +20,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-        
+      # Set CompressionFormat to Disabled
+      # Note: '2' corresponds to Disabled in ProjectSettings.asset
       - name: Set CompressionFormat to Disabled
         run: |
+          # WebGLビルドでの圧縮形式を'Disabled' (2)に設定し、ファイルサイズを安定させる
           sed -i -e 's/webGLCompressionFormat: ./webGLCompressionFormat: 2/' ProjectSettings/ProjectSettings.asset
 
       # Cache
@@ -41,9 +43,11 @@ jobs:
           UNITY_EMAIL:   ${{ secrets.UNITY_EMAIL }}
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
         with:
+          # 📌 ここは変更せず、使用しているバージョンを維持
+          unityVersion: 6000.2.2f1 
           targetPlatform: WebGL
           allowDirtyBuild: true
-          unityVersion: 6000.2.2f1 # ここは各自プロジェクトに合わせて設定
+          # GameCIのDockerイメージのタグは、このバージョンとプラットフォームから自動生成されます。
 
       # Remove
       - name: Remove symlinks and macOS hidden files
@@ -54,7 +58,7 @@ jobs:
       # Check build size
       - name: Check build size
         run: du -sh build
-          
+        
       # Upload
       - name: Upload
         uses: actions/upload-pages-artifact@v3
@@ -67,7 +71,7 @@ jobs:
         run: |
           echo "Contents of build directory:"
           ls -R build
-          
+        
   deploy:
     runs-on: ubuntu-latest
     needs: build
@@ -87,12 +91,12 @@ jobs:
         if: success()
         run: |
           curl -X POST -H "Content-Type: application/json" \
-          -d "{\"content\": \"✅ できた！！これが最新のビルドデータだよ！！ \n▶️ Play: ${{ steps.deployment.outputs.page_url }}\n📄 View logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}" \
+          -d "{\"content\": \"✅ ビルド成功！最新のビルドデータがデプロイされました！ \n▶️ Play: ${{ steps.deployment.outputs.page_url }}\n📄 View logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}" \
           ${{ secrets.DISCORD_WEBHOOK_URL }}
 
       - name: Notify Discord - Failure
         if: failure()
         run: |
           curl -X POST -H "Content-Type: application/json" \
-          -d "{\"content\": \"❌ ビルドエラーだ！修正してやる！！! \n📄 View logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}" \
+          -d "{\"content\": \"❌ ビルドエラーが発生しました！ログを確認してください。 \n📄 View logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}" \
           ${{ secrets.DISCORD_WEBHOOK_URL }}
