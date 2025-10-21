@@ -8,7 +8,7 @@ on:
 
 # 環境変数（Unityエディタバージョンを設定）
 env:
-  UNITY_VERSION: 6000.2.2f1 # あなたの指定したバージョン
+  UNITY_VERSION: 6000.2.2f1 # ★ あなたの指定したバージョン ★
 
 jobs:
   build_webgl:
@@ -23,7 +23,7 @@ jobs:
           
       # 2. Unityライセンスのアクティベート
       - name: Activate Unity License
-        # ★ バージョンタグを v3 に修正 ★
+        # 最も安定したバージョン @v3 に設定
         uses: game-ci/unity-actions/activate@v3  
         env:
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
@@ -32,7 +32,7 @@ jobs:
           
       # 3. Unity ビルドの実行 (WebGLの例)
       - name: Build project (WebGL)
-        # ★ バージョンタグを v3 に修正 ★
+        # 最も安定したバージョン @v3 に設定
         uses: game-ci/unity-actions/builder@v3    
         with:
           unityVersion: ${{ env.UNITY_VERSION }}
@@ -49,7 +49,7 @@ jobs:
           
       # 5. Unityライセンスのディアクティベート（重要）
       - name: Deactivate Unity License
-        # ★ バージョンタグを v3 に修正 ★
+        # 最も安定したバージョン @v3 に設定
         uses: game-ci/unity-actions/deactivate@v3 
         if: always() # ビルドが失敗しても実行されるようにする
           
@@ -59,12 +59,8 @@ jobs:
         uses: rjstone/discord-webhook-notify@v1
         with:
           severity: info
-          text: |
-            ✅ **Unity ビルド成功!**
-            **プラットフォーム:** WebGL
-            **ブランチ:** `${{ github.ref_name }}`
-            **コミット:** `${{ github.event.head_commit.message }}`
-            ビルド成果物はGitHub ActionsのArtifactsタブからダウンロード可能です。
+          # ★★★ YAML構文エラー修正済み ★★★
+          text: "✅ **Unity ビルド成功!**\n**プラットフォーム:** WebGL\n**ブランチ:** `${{ github.ref_name }}`\n**コミット:** `${{ github.event.head_commit.message }}`\nビルド成果物はGitHub ActionsのArtifactsタブからダウンロード可能です。"
           webhookUrl: ${{ secrets.DISCORD_WEBHOOK }}
 
       # 7. Discordへの通知 (失敗時)
@@ -73,7 +69,6 @@ jobs:
         uses: rjstone/discord-webhook-notify@v1
         with:
           severity: error
-          text: |
-            ❌ **Unity ビルド失敗!**
-            **ブランチ:** `${{ github.ref_name }}`
-            **コミット:** `${{ github.event.head_commit.message
+          # ★★★ YAML構文エラー修正済み ★★★
+          text: "❌ **Unity ビルド失敗!**\n**ブランチ:** `${{ github.ref_name }}`\n**コミット:** `${{ github.event.head_commit.message }}`\n詳細はGitHub Actionsのタブを確認してください。"
+          webhookUrl: ${{ secrets.DISCORD_WEBHOOK }}
