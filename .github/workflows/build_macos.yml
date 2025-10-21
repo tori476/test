@@ -1,10 +1,14 @@
 name: Unity Build and Notify
 
-# どのイベントでワークフローを起動するかを設定
+# このワークフローを 'main' ブランチへのプッシュで実行する
 on:
   push:
     branches:
       - main  # mainブランチへのプッシュで実行
+
+# 環境変数（Unityエディタバージョンを設定）
+env:
+  UNITY_VERSION: 2022.3.10f1 # ★ あなたのプロジェクトのUnityバージョンに合わせて変更してください ★
 
 jobs:
   build_webgl:
@@ -15,32 +19,38 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          lfs: true # Git LFS を利用している場合
+          lfs: true # Git LFS を利用している場合、これを有効にする
           
       # 2. Unityライセンスのアクティベート
       - name: Activate Unity License
-        uses: game-ci/unity-activate@v4
+        uses: game-ci/unity-activate@v5  # ★ v5に修正済み ★
         env:
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
-          UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }} # シリアルナンバーを使う場合
+          UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }} 
           
       # 3. Unity ビルドの実行 (WebGLの例)
       - name: Build project (WebGL)
-        uses: game-ci/unity-builder@v4
+        uses: game-ci/unity-builder@v5    # ★ v5に修正済み ★
         with:
+          unityVersion: ${{ env.UNITY_VERSION }}
           targetPlatform: WebGL
           # ビルド成果物が出力されるディレクトリ名
           buildsPath: build/WebGL
           
-      # 4. ビルド成果物をアップロード
+      # 4. ビルド成果物をGitHub ActionsのArtifactsにアップロード
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
           name: WebGL-Build-${{ github.sha }}
           path: build/WebGL
           
-      # 5. Discordへの通知
+      # 5. Unityライセンスのディアクティベート（重要）
+      - name: Deactivate Unity License
+        uses: game-ci/unity-deactivate@v5
+        if: always() # ビルドが失敗しても実行されるようにする
+          
+      # 6. Discordへの通知 (成功時)
       - name: Send Discord notification (Success)
         if: success()
         uses: rjstone/discord-webhook-notify@v1
@@ -48,11 +58,13 @@ jobs:
           severity: info
           text: |
             ✅ **Unity ビルド成功!**
+            **プラットフォーム:** WebGL
             **ブランチ:** `${{ github.ref_name }}`
             **コミット:** `${{ github.event.head_commit.message }}`
-            ビルド成果物はGitHub ActionsのArtifactsからダウンロード可能です。
+            ビルド成果物はGitHub ActionsのArtifactsタブからダウンロード可能です。
           webhookUrl: ${{ secrets.DISCORD_WEBHOOK }}
 
+      # 7. Discordへの通知 (失敗時)
       - name: Send Discord notification (Failure)
         if: failure()
         uses: rjstone/discord-webhook-notify@v1
@@ -62,5 +74,5 @@ jobs:
             ❌ **Unity ビルド失敗!**
             **ブランチ:** `${{ github.ref_name }}`
             **コミット:** `${{ github.event.head_commit.message }}`
-            詳細はActionsタブを確認してください。
+            詳細はGitHub Actionsのタブを確認してください。
           webhookUrl: ${{ secrets.DISCORD_WEBHOOK }}
