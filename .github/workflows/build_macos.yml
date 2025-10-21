@@ -2,8 +2,8 @@ name: Build macOS and Notify Discord
 
 on:
   push:
-    branches: [ main ] # mainブランチへのプッシュで実行
-  workflow_dispatch: {} # 手動実行を可能にする
+    branches: [ main ] 
+  workflow_dispatch: {} 
 
 defaults:
   run:
@@ -12,7 +12,7 @@ defaults:
 jobs:
   buildForMacOS:
     name: Build Unity Project on macOS
-    runs-on: macos-latest # GitHubホステッドランナー（macOS）を使用
+    runs-on: macos-latest
 
     steps:
       - name: Checkout Repository
@@ -21,29 +21,26 @@ jobs:
           lfs: true 
           submodules: recursive
 
-      # 🚨 ここを**あなたのUnityプロジェクトのバージョン**に合わせる！
       - name: Set up Unity Editor
-        uses: game-ci/unity-setup@v4
+        # 💡 アクションを修正
+        uses: unity-actions/setup-unity@v2
         with:
-          unity-version: 2021.3.16f1 # ← **ここを修正**
+          # 🚨 プロジェクトのUnityバージョンに合わせる！例: 2022.3.5f1
+          unity-version: 6000.2.2f1 # ← ここをあなたの正しいバージョンに修正
 
-      # ビルド実行
       - name: Run Unity Build
         run: |
-          # 🚨 BuildApp.Buildは、あなたがAssets/Editorに作成した
-          #    ビルドスクリプトのクラス名.メソッド名に合わせる
+          # 🚨 BuildApp.Buildは、作成したビルドスクリプトのクラス名.メソッド名に合わせる
           Unity -batchmode -quit -projectPath . -buildTarget StandaloneOSX -executeMethod BuildApp.Build -logFile - || exit 1
 
       - name: Upload Build Artifact
-        uses: actions/upload-artifact@v3
+        # ✅ v4に修正
+        uses: actions/upload-artifact@v4
         with:
           name: App_macOS 
           path: Builds/App/ # ビルドメソッドで指定した出力フォルダに合わせる
           retention-days: 7
 
-      # ----------------------------------------
-      # Discord通知 (成功時)
-      # ----------------------------------------
       - name: Send Success Notification to Discord
         if: success() 
         run: |
@@ -60,9 +57,6 @@ jobs:
             ]
           }'
           
-      # ----------------------------------------
-      # Discord通知 (失敗時)
-      # ----------------------------------------
       - name: Send Failure Notification to Discord
         if: failure()
         run: |
