@@ -23,8 +23,8 @@ jobs:
           
       # 2. Unityライセンスのアクティベート
       - name: Activate Unity License
-        # ★ バージョンを安定したコミットハッシュに固定 ★
-        uses: game-ci/unity-actions/activate@6e3af23b2c2125f4fa6e42b262a04917a80b080f  
+        # ★ バージョンを安定版ブランチ名 @main に修正 ★
+        uses: game-ci/unity-actions/activate@main  
         env:
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
@@ -32,8 +32,8 @@ jobs:
           
       # 3. Unity ビルドの実行 (WebGLの例)
       - name: Build project (WebGL)
-        # ★ バージョンを安定したコミットハッシュに固定 ★
-        uses: game-ci/unity-actions/builder@6e3af23b2c2125f4fa6e42b262a04917a80b080f    
+        # ★ バージョンを安定版ブランチ名 @main に修正 ★
+        uses: game-ci/unity-actions/builder@main    
         with:
           unityVersion: ${{ env.UNITY_VERSION }}
           targetPlatform: WebGL
@@ -49,8 +49,8 @@ jobs:
           
       # 5. Unityライセンスのディアクティベート（重要）
       - name: Deactivate Unity License
-        # ★ バージョンを安定したコミットハッシュに固定 ★
-        uses: game-ci/unity-actions/deactivate@6e3af23b2c2125f4fa6e42b262a04917a80b080f 
+        # ★ バージョンを安定版ブランチ名 @main に修正 ★
+        uses: game-ci/unity-actions/deactivate@main 
         if: always() # ビルドが失敗しても実行されるようにする
           
       # 6. Discordへの通知 (成功時)
