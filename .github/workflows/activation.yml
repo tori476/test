@@ -13,13 +13,16 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Request manual activation file
-        id: getManualLicenseFile
-        uses: game-ci/unity-request-activation-file@v2
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
         with:
+          targetPlatform: StandaloneLinux64
           unityVersion: 6000.2.2f1
+          customParameters: -quit -batchmode -nographics -createManualActivationFile
 
-      - name: Expose as artifact
+      - name: Upload activation file
         uses: actions/upload-artifact@v4
         with:
           name: Manual Activation File
-          path: ${{ steps.getManualLicenseFile.outputs.filePath }}
+          path: "*.alf"
