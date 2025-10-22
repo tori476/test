@@ -1,0 +1,23 @@
+# .github/workflows/activation.yml
+
+name: 1. Get Activation File
+
+on:
+  # 手動で実行できるようにする
+  workflow_dispatch:
+
+jobs:
+  get-activation-file:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Request activation file
+        uses: game-ci/unity-request-activation-file@v3
+
+      - name: Upload activation file
+        uses: actions/upload-artifact@v4
+        with:
+          name: activation-file
+          path: ./*.alf
