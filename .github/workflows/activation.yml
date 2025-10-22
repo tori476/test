@@ -3,7 +3,6 @@
 name: 1. Get Activation File
 
 on:
-  # 手動で実行できるようにする
   workflow_dispatch:
 
 jobs:
@@ -13,30 +12,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Cache Unity
-        uses: actions/cache@v3
+      - name: Request manual activation file
+        id: getManualLicenseFile
+        uses: game-ci/unity-request-activation-file@v2
         with:
-          path: /opt/unity
-          key: unity-6000.2.2f1-linux
+          unityVersion: 6000.2.2f1
 
-      - name: Install Unity Hub
-        run: |
-          wget -qO - https://hub.unity3d.com/linux/keys/public | gpg --dearmor | sudo tee /usr/share/keyrings/Unity_Technologies_ApS.gpg > /dev/null
-          echo "deb [signed-by=/usr/share/keyrings/Unity_Technologies_ApS.gpg] https://hub.unity3d.com/linux/repos/deb stable main" | sudo tee /etc/apt/sources.list.d/unityhub.list
-          sudo apt update
-          sudo apt-get install unityhub
-
-      - name: Install Unity Editor
-        run: |
-          unityhub --headless install --version 6000.2.2f1 --changeset a7a38ad0c740
-
-      - name: Generate activation file
-        run: |
-          /opt/unity/editors/6000.2.2f1/Editor/Unity -batchmode -createManualActivationFile -quit
-          ls -la *.alf
-
-      - name: Upload activation file
+      - name: Expose as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: activation-file
-          path: "*.alf"
+          name: Manual Activation File
+          path: ${{ steps.getManualLicenseFile.outputs.filePath }}
